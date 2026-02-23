@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* PulseWrite Brand Tokens */
+:root {
+  --pw-primary: #6366f1;
+  --pw-primary-hover: #818cf8;
+  --pw-accent: #a78bfa;
+  --pw-bg-dark: #0a0a0f;
+  --pw-bg-card: #111118;
+  --pw-bg-input: #1a1a24;
+  --pw-border: #27272f;
+  --pw-text: #f4f4f5;
+  --pw-text-muted: #a1a1aa;
+  --pw-success: #34d399;
+  --pw-glow: rgba(99, 102, 241, 0.15);
+}
+
+/* Global reset for popup */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--pw-bg-dark);
+  color: var(--pw-text);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pw-border);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pw-text-muted);
+}
+
+/* Pulse animation for the logo */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--pw-glow), 0 0 24px var(--pw-glow);
+  }
+  50% {
+    box-shadow: 0 0 16px var(--pw-glow), 0 0 48px var(--pw-glow);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

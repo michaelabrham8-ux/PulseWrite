@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "PulseWrite – LinkedIn Ghostwriter",
+  "version": "0.1.0",
+  "description": "LinkedIn post idea generator & ghostwriter powered by AI.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*"
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "public/icon16.png",
+      "48": "public/icon48.png",
+      "128": "public/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "public/icon16.png",
+    "48": "public/icon48.png",
+    "128": "public/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "assets/content.ts-bC5EhWxL.js"
+      ],
+      "matches": [
+        "https://www.linkedin.com/*"
+      ]
+    }
+  ],
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "https://www.linkedin.com/*"
+      ],
+      "resources": [
+        "assets/content.ts-bC5EhWxL.js"
+      ],
+      "use_dynamic_url": false
+    }
+  ]
+}
