@@ -1,108 +1,192 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardContent,
-    CardFooter,
-} from "@/components/ui/card";
-import { Sparkles, Zap, PenLine, ChevronRight } from "lucide-react";
+import { Sparkles, PenLine, ChevronRight, Zap, Crown, RotateCcw, Lightbulb } from "lucide-react";
 
-function App() {
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Mode = "ideas" | "write";
+type Tone = "professional" | "casual" | "inspirational" | "savage";
+type Length = "short" | "medium" | "thread";
+
+const TONES: { value: Tone; label: string; emoji: string }[] = [
+    { value: "professional", label: "Pro", emoji: "💼" },
+    { value: "casual", label: "Casual", emoji: "😊" },
+    { value: "inspirational", label: "Inspire", emoji: "🔥" },
+    { value: "savage", label: "Savage", emoji: "😈" },
+];
+
+const LENGTHS: { value: Length; label: string; sub: string }[] = [
+    { value: "short", label: "Short", sub: "~100 words" },
+    { value: "medium", label: "Medium", sub: "~250 words" },
+    { value: "thread", label: "Thread", sub: "3 parts" },
+];
+
+// ─── Mock data ────────────────────────────────────────────────────────────────
+const FREE_LIMIT = 10;
+const USED = 3; // mock — will come from chrome.storage later
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+export default function App() {
+    const [mode, setMode] = useState<Mode>("ideas");
     const [topic, setTopic] = useState("");
+    const [tone, setTone] = useState<Tone>("professional");
+    const [length, setLength] = useState<Length>("medium");
+
+    const remaining = FREE_LIMIT - USED;
+    const isPro = false; // mock
 
     return (
-        <div className="flex flex-col h-[520px] bg-(--pw-bg-dark)">
-            {/* Header */}
-            <header className="flex items-center gap-3 px-5 py-4 border-b border-(--pw-border)">
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-(--pw-primary) pulse-glow">
-                    <PenLine className="w-5 h-5 text-white" />
+        <div className="popup-root">
+            {/* ── Header ─────────────────────────────── */}
+            <header className="header">
+                <div className="logo-icon pulse-glow">
+                    <PenLine size={18} strokeWidth={2.5} />
                 </div>
-                <div>
-                    <h1 className="text-base font-bold text-(--pw-text) tracking-tight">
-                        PulseWrite
-                    </h1>
-                    <p className="text-[11px] text-(--pw-text-muted)">
-                        LinkedIn Ghostwriter
-                    </p>
+                <div className="header-text">
+                    <h1>PulseWrite</h1>
+                    <span>LinkedIn Ghostwriter</span>
                 </div>
-                <div className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-(--pw-bg-input) border border-(--pw-border)">
-                    <div className="w-1.5 h-1.5 rounded-full bg-(--pw-success)" />
-                    <span className="text-[10px] text-(--pw-text-muted)">v0.1.0</span>
+                <div className="badge-pro">
+                    {isPro ? (
+                        <><Crown size={10} /> Pro</>
+                    ) : (
+                        <><Zap size={10} /> Free</>
+                    )}
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto p-4 space-y-3">
-                {/* Topic Input Card */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-sm">
-                            <Sparkles className="w-4 h-4 text-(--pw-accent)" />
-                            What's on your mind?
-                        </CardTitle>
-                        <CardDescription>
-                            Enter a topic or theme for your LinkedIn post
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <textarea
-                            value={topic}
-                            onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g., AI trends in 2025, leadership lessons, startup growth..."
-                            className="w-full h-24 px-3 py-2.5 rounded-lg bg-(--pw-bg-input) border border-(--pw-border) text-sm text-(--pw-text) placeholder:text-(--pw-text-muted) resize-none focus:outline-none focus:border-(--pw-primary) focus:ring-1 focus:ring-(--pw-glow) transition-all duration-200"
+            {/* ── Generation counter ─────────────────── */}
+            {!isPro && (
+                <div className="gen-bar">
+                    <div className="gen-bar-track">
+                        <div
+                            className="gen-bar-fill"
+                            style={{ width: `${(USED / FREE_LIMIT) * 100}%` }}
                         />
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full group" size="lg">
-                            <Zap className="w-4 h-4 transition-transform group-hover:scale-110" />
-                            Generate Ideas
-                            <ChevronRight className="w-4 h-4 ml-auto opacity-50 transition-transform group-hover:translate-x-0.5" />
-                        </Button>
-                    </CardFooter>
-                </Card>
+                    </div>
+                    <span className="gen-bar-label">
+                        {remaining} / {FREE_LIMIT} free generations left
+                    </span>
+                </div>
+            )}
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-2">
-                    <Button variant="secondary" size="sm" className="justify-start">
-                        <Sparkles className="w-3.5 h-3.5 text-(--pw-accent)" />
-                        Trending Topics
-                    </Button>
-                    <Button variant="secondary" size="sm" className="justify-start">
-                        <PenLine className="w-3.5 h-3.5 text-(--pw-accent)" />
-                        Draft from Scratch
-                    </Button>
+            {/* ── Mode tabs ──────────────────────────── */}
+            <div className="mode-tabs">
+                <button
+                    className={`mode-tab ${mode === "ideas" ? "active" : ""}`}
+                    onClick={() => setMode("ideas")}
+                >
+                    <Lightbulb size={14} />
+                    Generate Ideas
+                </button>
+                <button
+                    className={`mode-tab ${mode === "write" ? "active" : ""}`}
+                    onClick={() => setMode("write")}
+                >
+                    <PenLine size={14} />
+                    Write Post
+                </button>
+            </div>
+
+            {/* ── Main card ──────────────────────────── */}
+            <main className="main-card">
+
+                {/* Topic input */}
+                <div className="field">
+                    <label className="field-label">
+                        {mode === "ideas" ? "What's the theme?" : "Topic or rough draft"}
+                    </label>
+                    <textarea
+                        className="field-input"
+                        value={topic}
+                        onChange={e => setTopic(e.target.value)}
+                        placeholder={
+                            mode === "ideas"
+                                ? "e.g. AI trends, startup lessons, leadership…"
+                                : "e.g. Why I quit my corporate job to build in public…"
+                        }
+                        rows={3}
+                    />
                 </div>
 
-                {/* Empty State */}
-                <Card className="border-dashed">
-                    <CardContent className="py-8 flex flex-col items-center text-center">
-                        <div className="w-12 h-12 rounded-full bg-(--pw-bg-input) flex items-center justify-center mb-3">
-                            <PenLine className="w-6 h-6 text-(--pw-text-muted)" />
+                {/* Tone selector (Write mode only) */}
+                {mode === "write" && (
+                    <div className="field">
+                        <label className="field-label">Tone</label>
+                        <div className="tone-grid">
+                            {TONES.map(t => (
+                                <button
+                                    key={t.value}
+                                    className={`tone-btn ${tone === t.value ? "active" : ""}`}
+                                    onClick={() => setTone(t.value)}
+                                >
+                                    <span className="tone-emoji">{t.emoji}</span>
+                                    {t.label}
+                                </button>
+                            ))}
                         </div>
-                        <p className="text-sm font-medium text-(--pw-text-muted)">
-                            Your generated ideas will appear here
+                    </div>
+                )}
+
+                {/* Length selector (Write mode only) */}
+                {mode === "write" && (
+                    <div className="field">
+                        <label className="field-label">Length</label>
+                        <div className="length-grid">
+                            {LENGTHS.map(l => (
+                                <button
+                                    key={l.value}
+                                    className={`length-btn ${length === l.value ? "active" : ""}`}
+                                    onClick={() => setLength(l.value)}
+                                >
+                                    <span className="length-label">{l.label}</span>
+                                    <span className="length-sub">{l.sub}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Result placeholder area */}
+                <div className="result-area">
+                    <div className="result-empty">
+                        <Sparkles size={24} className="result-icon" />
+                        <p>
+                            {mode === "ideas"
+                                ? "5 ready-to-use post ideas will appear here"
+                                : "Your AI-written post will appear here"}
                         </p>
-                        <p className="text-xs text-(--pw-text-muted) mt-1 opacity-60">
-                            Powered by Llama 3.1 via Groq
-                        </p>
-                    </CardContent>
-                </Card>
+                        <span>Powered by Llama 3.1 via Groq</span>
+                    </div>
+                </div>
+
+                {/* CTA button */}
+                <button
+                    className="cta-btn"
+                    disabled={remaining === 0}
+                >
+                    {mode === "ideas" ? (
+                        <><Lightbulb size={16} /> Generate 5 Ideas <ChevronRight size={14} className="cta-arrow" /></>
+                    ) : (
+                        <><Sparkles size={16} /> Write My Post <ChevronRight size={14} className="cta-arrow" /></>
+                    )}
+                </button>
+
+                {remaining === 0 && (
+                    <p className="limit-msg">
+                        You've used all free generations.{" "}
+                        <a href="#" className="upgrade-link">Upgrade to Pro →</a>
+                    </p>
+                )}
             </main>
 
-            {/* Footer */}
-            <footer className="px-5 py-3 border-t border-(--pw-border) flex items-center justify-between">
-                <span className="text-[10px] text-(--pw-text-muted) opacity-50">
-                    PulseWrite © 2026
-                </span>
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2">
-                    ⚙️ Settings
-                </Button>
+            {/* ── Footer ─────────────────────────────── */}
+            <footer className="footer">
+                <button className="footer-link">
+                    <RotateCcw size={11} /> Reset
+                </button>
+                <a href="#" className="upgrade-link footer-upgrade">
+                    <Crown size={11} /> Upgrade to Pro – $9.99/mo
+                </a>
             </footer>
         </div>
     );
 }
-
-export default App;
