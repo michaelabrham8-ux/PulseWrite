@@ -176,7 +176,7 @@ function App() {
                         <ArrowLeft className="w-3.5 h-3.5" />
                     </button>
                 )}
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-(--pw-primary) pulse-glow flex-shrink-0">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-(--pw-primary) pulse-glow shrink-0">
                     <PenLine className="w-4 h-4 text-white" />
                 </div>
                 <div>
@@ -201,7 +201,7 @@ function App() {
             {/* ── Error bar ──────────────────────────────────────────────── */}
             {error && (
                 <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-[11px]">
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    <AlertCircle className="w-3 h-3 shrink-0" />
                     <span>{error}</span>
                 </div>
             )}
@@ -333,14 +333,14 @@ function App() {
                             onClick={() => { setTopic(idea.title + " — " + idea.angle); setMode("write"); setView("home"); }}
                             className="w-full text-left flex items-start gap-3 p-3 rounded-xl border border-(--pw-border) bg-(--pw-bg-input) hover:bg-(--pw-bg-hover) hover:border-(--pw-primary)/40 transition-all"
                         >
-                            <span className="flex-shrink-0 w-5 h-5 rounded-md bg-(--pw-primary)/15 border border-(--pw-primary)/25 flex items-center justify-center text-[9px] font-bold text-(--pw-primary-h)">
+                            <span className="shrink-0 w-5 h-5 rounded-md bg-(--pw-primary)/15 border border-(--pw-primary)/25 flex items-center justify-center text-[9px] font-bold text-(--pw-primary-h)">
                                 {i + 1}
                             </span>
                             <div className="min-w-0">
                                 <p className="text-[11.5px] font-semibold text-(--pw-text) truncate">{idea.title}</p>
                                 <p className="text-[10px] text-(--pw-text-muted) mt-0.5 truncate">{idea.angle}</p>
                             </div>
-                            <ChevronRight className="w-3.5 h-3.5 text-(--pw-text-muted) flex-shrink-0 mt-0.5" />
+                            <ChevronRight className="w-3.5 h-3.5 text-(--pw-text-muted) shrink-0 mt-0.5" />
                         </button>
                     ))}
                 </main>

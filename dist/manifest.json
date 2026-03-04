@@ -28,7 +28,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-DEqz7SO2.js"
+        "assets/content.ts-DLDFANyL.js"
       ],
       "matches": [
         "https://www.linkedin.com/*"
@@ -45,7 +45,7 @@
         "https://www.linkedin.com/*"
       ],
       "resources": [
-        "assets/content.ts-DEqz7SO2.js"
+        "assets/content.ts-DLDFANyL.js"
       ],
       "use_dynamic_url": false
     }

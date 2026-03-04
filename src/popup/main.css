@@ -2,18 +2,32 @@
 
 /* ─── PulseWrite Brand Tokens ──────────────────────────────────────────────── */
 :root {
+  /* Core */
   --pw-primary: #6366f1;
+  --pw-primary-hover: #4f46e5;
   --pw-primary-h: #818cf8;
   --pw-accent: #a78bfa;
+
+  /* Backgrounds */
   --pw-bg-dark: #0a0a0f;
   --pw-bg-card: #111118;
   --pw-bg-input: #1a1a24;
   --pw-bg-hover: #22222e;
+
+  /* Borders */
   --pw-border: #27272f;
+
+  /* Text */
   --pw-text: #f4f4f5;
   --pw-text-muted: #a1a1aa;
+
+  /* Feedback */
   --pw-success: #34d399;
+  --pw-danger: #f87171;
+
+  /* Glow */
   --pw-glow: rgba(99, 102, 241, 0.15);
+  --pw-glow-strong: rgba(99, 102, 241, 0.4);
 }
 
 /* ─── Reset ────────────────────────────────────────────────────────────────── */
@@ -64,7 +78,7 @@ pre {
   background: var(--pw-text-muted);
 }
 
-/* ─── Animations ───────────────────────────────────────────────────────────── */
+/* ─── Pulse glow animation ─────────────────────────────────────────────────── */
 @keyframes pulse-glow {
 
   0%,
@@ -73,7 +87,7 @@ pre {
   }
 
   50% {
-    box-shadow: 0 0 16px var(--pw-glow), 0 0 48px var(--pw-glow);
+    box-shadow: 0 0 16px var(--pw-glow-strong), 0 0 48px var(--pw-glow);
   }
 }
 
@@ -81,6 +95,7 @@ pre {
   animation: pulse-glow 2.5s ease-in-out infinite;
 }
 
+/* ─── Shimmer animation (loading skeleton) ─────────────────────────────────── */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -92,7 +107,7 @@ pre {
 }
 
 .shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.08) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.08) 50%, transparent);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
