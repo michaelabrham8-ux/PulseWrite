@@ -9,7 +9,8 @@
         "scripting"
     ],
     "host_permissions": [
-        "https://www.linkedin.com/*"
+        "https://www.linkedin.com/*",
+        "https://api.groq.com/*"
     ],
     "action": {
         "default_popup": "src/popup/index.html",

@@ -1,13 +1,12 @@
 /**
- * PulseWrite Content Script – Day 2
- * Detects LinkedIn compose box via MutationObserver (debounced),
- * injects a floating ✨ button on focus, removes it when compose closes.
+ * PulseWrite Content Script – Day 3
+ * Detects LinkedIn compose box, injects ✨ floating button,
+ * announces compose tab to background, and handles INSERT_TEXT from background.
  */
 
 const PULSEWRITE_BTN_ID = "pulsewrite-floating-btn";
 const PULSEWRITE_WRAPPER_ID = "pulsewrite-wrapper";
 
-/** All known LinkedIn compose-box selectors (2026 DOM, multiple fallbacks) */
 const COMPOSE_SELECTORS = [
     'div[role="textbox"][contenteditable="true"]',
     'div[aria-label*="What do you want to talk about"][contenteditable="true"]',
@@ -18,12 +17,11 @@ const COMPOSE_SELECTORS = [
     ".ql-editor[data-placeholder]",
 ];
 
-// ─── State ────────────────────────────────────────────────────────────────────
-
 let currentComposeBox: Element | null = null;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let composeAnnounced = false;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function debounce(fn: () => void, ms: number) {
     if (debounceTimer) clearTimeout(debounceTimer);
@@ -38,9 +36,7 @@ function findComposeBox(): Element | null {
     return null;
 }
 
-/** Returns the best ancestor to use as a positioning container */
 function getPositioningParent(editor: Element): HTMLElement | null {
-    // Walk up until we find a reasonably-sized container (not the whole page)
     let el = editor.parentElement;
     for (let i = 0; i < 6 && el; i++) {
         const rect = el.getBoundingClientRect();
@@ -50,10 +46,9 @@ function getPositioningParent(editor: Element): HTMLElement | null {
     return (editor.parentElement as HTMLElement) ?? null;
 }
 
-// ─── Button creation ──────────────────────────────────────────────────────────
+// ─── Button ───────────────────────────────────────────────────────────────────
 
 function createFloatingButton(): HTMLElement {
-    // Wrapper keeps the button positioned relative to compose area
     const wrapper = document.createElement("div");
     wrapper.id = PULSEWRITE_WRAPPER_ID;
     Object.assign(wrapper.style, {
@@ -63,24 +58,19 @@ function createFloatingButton(): HTMLElement {
         zIndex: "99999",
         display: "flex",
         alignItems: "center",
-        gap: "6px",
-        pointerEvents: "none", // wrapper is invisible; only button catches events
+        pointerEvents: "none",
     });
 
     const btn = document.createElement("button");
     btn.id = PULSEWRITE_BTN_ID;
     btn.title = "PulseWrite – Write with AI ✨";
     btn.setAttribute("aria-label", "Open PulseWrite");
-
-    // Sparkles SVG (lucide-style)
     btn.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-      <path d="M20 3v4"/>
-      <path d="M22 5h-4"/>
-      <path d="M4 17v2"/>
-      <path d="M5 18H3"/>
+      <path d="M20 3v4"/><path d="M22 5h-4"/>
+      <path d="M4 17v2"/><path d="M5 18H3"/>
     </svg>`;
 
     Object.assign(btn.style, {
@@ -96,7 +86,7 @@ function createFloatingButton(): HTMLElement {
         color: "#fff",
         cursor: "pointer",
         boxShadow: "0 2px 12px rgba(99,102,241,0.45)",
-        transition: "transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease",
         opacity: "0.92",
         padding: "0",
         outline: "none",
@@ -112,26 +102,23 @@ function createFloatingButton(): HTMLElement {
         btn.style.boxShadow = "0 2px 12px rgba(99,102,241,0.45)";
         btn.style.opacity = "0.92";
     });
-    btn.addEventListener("mousedown", (e) => {
-        e.preventDefault(); // prevent blurring the compose box
-    });
+    btn.addEventListener("mousedown", (e) => e.preventDefault());
 
     btn.addEventListener("click", (e) => {
         e.stopPropagation();
         e.preventDefault();
-        console.log("[PulseWrite] ✨ Button clicked – sending OPEN_PULSEWRITE message");
+        console.log("[PulseWrite] ✨ Button clicked");
 
-        // Store a reference so the popup can inject text back
+        // Store compose text snapshot so popup can read it
         if (currentComposeBox) {
             chrome.storage.local.set({
-                pulsewrite_compose_active: true,
-                pulsewrite_compose_text: (currentComposeBox as HTMLElement).innerText ?? "",
+                pw_compose_text: (currentComposeBox as HTMLElement).innerText ?? "",
             });
         }
 
         chrome.runtime.sendMessage({ type: "OPEN_PULSEWRITE" }, (response) => {
             if (chrome.runtime.lastError) {
-                console.warn("[PulseWrite] runtime error:", chrome.runtime.lastError.message);
+                console.warn("[PulseWrite]", chrome.runtime.lastError.message);
             } else {
                 console.log("[PulseWrite] Response:", response);
             }
@@ -142,41 +129,33 @@ function createFloatingButton(): HTMLElement {
     return wrapper;
 }
 
-// ─── Injection / removal ──────────────────────────────────────────────────────
-
 function removeButton(): void {
     document.getElementById(PULSEWRITE_WRAPPER_ID)?.remove();
 }
 
 function injectButton(composeBox: Element): void {
-    // Already injected?
     if (document.getElementById(PULSEWRITE_WRAPPER_ID)) return;
-
     const container = getPositioningParent(composeBox);
     if (!container) return;
-
-    // Make sure the parent is positioned so `absolute` works
-    const computedPos = getComputedStyle(container).position;
-    if (computedPos === "static") container.style.position = "relative";
-
+    if (getComputedStyle(container).position === "static") container.style.position = "relative";
     container.appendChild(createFloatingButton());
-    console.log("[PulseWrite] ✅ Floating button injected");
+    console.log("[PulseWrite] ✅ Button injected");
+
+    // Announce compose tab to background (once per session)
+    if (!composeAnnounced) {
+        chrome.runtime.sendMessage({ type: "COMPOSE_OPENED" }, () => {
+            if (!chrome.runtime.lastError) composeAnnounced = true;
+        });
+    }
 }
 
-// ─── Focus / blur listeners ───────────────────────────────────────────────────
-
 function attachFocusListeners(box: Element): void {
-    box.addEventListener("focus", () => {
-        console.log("[PulseWrite] Compose box focused – injecting button");
-        injectButton(box);
-    }, true);
-
+    box.addEventListener("focus", () => injectButton(box), true);
     box.addEventListener("blur", (e) => {
         const related = (e as FocusEvent).relatedTarget as Node | null;
-        // Don't remove if focus moved to the PulseWrite button itself
         const btn = document.getElementById(PULSEWRITE_BTN_ID);
         if (btn && related && btn.contains(related)) return;
-        setTimeout(removeButton, 150); // small delay avoids race on click
+        setTimeout(removeButton, 150);
     }, true);
 }
 
@@ -189,39 +168,35 @@ function checkForComposeBox(): void {
 
     if (box && box !== currentComposeBox) {
         currentComposeBox = box;
-        console.log("[PulseWrite] 🎯 Compose box detected:", box.tagName, box.className.slice(0, 60));
+        composeAnnounced = false; // re-announce for new compose session
+        console.log("[PulseWrite] 🎯 Compose box detected");
         attachFocusListeners(box);
-
-        // If box is already focused (e.g. opened programmatically), inject immediately
         if (document.activeElement === box || box.contains(document.activeElement)) {
             injectButton(box);
         }
     }
-
     if (!box && currentComposeBox) {
-        console.log("[PulseWrite] Compose box gone – removing button");
         currentComposeBox = null;
+        composeAnnounced = false;
         removeButton();
     }
 }
 
 function startObserver(): void {
     if (domObserver) return;
-
     domObserver = new MutationObserver(() => debounce(checkForComposeBox, 200));
-    domObserver.observe(document.body, { childList: true, subtree: true, attributes: false });
-    console.log("[PulseWrite] 👀 MutationObserver started");
+    domObserver.observe(document.body, { childList: true, subtree: true });
+    console.log("[PulseWrite] 👀 Observer started");
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 function init(): void {
-    console.log("[PulseWrite] 🚀 Content script loaded on LinkedIn");
+    console.log("[PulseWrite] 🚀 Content script loaded");
     checkForComposeBox();
     startObserver();
 }
 
-// Cleanup
 window.addEventListener("beforeunload", () => {
     domObserver?.disconnect();
     removeButton();
